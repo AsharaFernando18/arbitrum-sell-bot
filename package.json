@@ -1,0 +1,21 @@
+{
+  "name": "arbitrum-sell-bot",
+  "version": "1.0.0",
+  "description": "Auto DCA sell bot for Arbitrum token on Uniswap V3",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "test-sell": "node test-sell.js",
+    "test": "node tests/config-validator.test.js",
+    "test-db": "node tests/firebase.test.js",
+    "ui": "node dashboard.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.8.0",
+    "helmet": "^8.1.0",
+    "node-cron": "^3.0.3"
+  }
+}

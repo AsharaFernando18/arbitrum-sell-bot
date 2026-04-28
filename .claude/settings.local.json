@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs kill *)",
+      "Bash(node dashboard.js)",
+      "Bash(node /Users/asharafernando/Downloads/arbitrum-sell-bot/dashboard.js)"
+    ]
+  }
+}

@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexusFlow — Intelligent DCA</title>
+    <meta name="theme-color" content="#09090b" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              background: '#05050A',
+              surface: 'rgba(15, 15, 25, 0.6)',
+              surfaceHighlight: 'rgba(25, 25, 40, 0.8)',
+              border: 'rgba(255, 255, 255, 0.08)',
+              primary: '#06B6D4', // Cyan
+              secondary: '#8B5CF6', // Violet
+              success: '#10B981',
+              danger: '#F43F5E',
+              warning: '#F59E0B'
+            },
+            boxShadow: {
+              'glow-primary': '0 0 20px rgba(6, 182, 212, 0.3)',
+              'glow-secondary': '0 0 20px rgba(139, 92, 246, 0.3)',
+              'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+            },
+            animation: {
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 6s ease-in-out infinite',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <link rel="stylesheet" href="/styles.css" />
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+  </head>
+  <body class="bg-background text-gray-200 font-sans min-h-screen overflow-x-hidden selection:bg-primary/30 antialiased">
+    
+    <!-- Background Mesh Gradient -->
+    <div class="bg-mesh">
+      <div class="mesh-blob mesh-blob-1"></div>
+      <div class="mesh-blob mesh-blob-2"></div>
+      <div class="mesh-blob mesh-blob-3"></div>
+    </div>
+    
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-30 mask-radial-gradient mix-blend-overlay"></div>
+    </div>
+
+    <!-- Boot Overlay -->
+    <div id="bootOverlay" class="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-[#030305] transition-all duration-500" aria-busy="true">
+      <div class="relative w-16 h-16">
+        <div class="absolute inset-0 rounded-full border-t-2 border-primary animate-spin"></div>
+        <div class="absolute inset-2 rounded-full border-r-2 border-secondary animate-spin" style="animation-direction: reverse;"></div>
+        <img src="/logo.png" alt="NexusFlow" class="absolute inset-4 w-8 h-8 object-contain animate-pulse" />
+      </div>
+      <span class="mt-6 text-sm font-semibold tracking-[0.2em] text-gray-400 uppercase">System Initializing</span>
+    </div>
+
+    <!-- Login Gate -->
+    <div id="loginGate" class="fixed inset-0 z-[200] bg-background/80 backdrop-blur-md overflow-auto transition-all duration-500 flex items-center justify-center hidden opacity-0" aria-modal="true" role="dialog" aria-labelledby="loginTitle">
+        <div class="relative w-full max-w-[1000px] min-h-[600px] flex rounded-3xl overflow-hidden border border-border bg-surface shadow-glass m-4 animate-float">
+            
+            <!-- Left Side - Branding -->
+            <div class="hidden md:flex flex-col gap-10 w-1/2 p-12 relative overflow-hidden bg-gradient-to-br from-background to-surfaceHighlight border-r border-border">
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-6">
+                        <img src="/logo.png" alt="Logo" class="w-10 h-10 drop-shadow-glow-primary" />
+                        <span class="text-xs font-bold tracking-widest text-primary uppercase">Arbitrum Network</span>
+                    </div>
+                    <h1 class="text-5xl font-extrabold text-white leading-tight mb-4 tracking-tight">Nexus<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Flow</span></h1>
+                    <p class="text-base text-gray-400 leading-relaxed max-w-sm">Intelligent DCA architecture for automated on-chain liquidity execution.</p>
+                </div>
+
+                <!-- Stats Row to fill middle gap -->
+                <div class="relative z-10 grid grid-cols-3 gap-3">
+                    <div class="bg-white/3 border border-white/8 rounded-xl p-3 text-center">
+                        <div class="text-xl font-black text-white">24/7</div>
+                        <div class="text-[0.6rem] text-gray-500 uppercase tracking-widest mt-0.5">Uptime</div>
+                    </div>
+                    <div class="bg-white/3 border border-white/8 rounded-xl p-3 text-center">
+                        <div class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">DCA</div>
+                        <div class="text-[0.6rem] text-gray-500 uppercase tracking-widest mt-0.5">Strategy</div>
+                    </div>
+                    <div class="bg-white/3 border border-white/8 rounded-xl p-3 text-center">
+                        <div class="text-xl font-black text-white">L2</div>
+                        <div class="text-[0.6rem] text-gray-500 uppercase tracking-widest mt-0.5">Arbitrum</div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 space-y-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">Hyper-Optimized Routing</h3>
+                            <p class="text-sm text-gray-500">Aggregates liquidity across V2, V3, and V4 pools for minimal slippage.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary shrink-0">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white mb-1">Non-Custodial Security</h3>
+                            <p class="text-sm text-gray-500">Your keys remain locally encrypted. Absolute control over your assets.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decorative elements -->
+                <div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none"></div>
+                <i data-lucide="hexagon" class="absolute -bottom-20 -left-20 w-64 h-64 text-primary/5 stroke-[0.5] rotate-12"></i>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div class="w-full md:w-1/2 p-10 sm:p-14 flex flex-col justify-center relative">
+                <div class="max-w-sm w-full mx-auto">
+                    <div class="text-center mb-10">
+                        <div class="inline-flex md:hidden items-center justify-center w-16 h-16 rounded-2xl bg-surfaceHighlight border border-border mb-6 shadow-glow-primary">
+                             <img src="/logo.png" alt="Logo" class="w-8 h-8" />
+                        </div>
+                        <h2 id="loginTitle" class="text-3xl font-bold text-white tracking-tight mb-2">Secure Access</h2>
+                        <p id="loginSubtitle" class="text-gray-400 text-sm">Authenticate to access the command center.</p>
+                    </div>
+
+                    <form id="loginForm" class="space-y-5">
+                        <div class="space-y-4">
+                            <div class="relative group">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-primary transition-colors">
+                                    <i data-lucide="user" class="w-5 h-5"></i>
+                                </div>
+                                <input id="loginUsername" type="text" autocomplete="email" placeholder="Email Address" class="w-full pl-12 pr-4 py-3.5 bg-background border border-border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300" />
+                            </div>
+                            
+                            <div class="relative group">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-secondary transition-colors">
+                                    <i data-lucide="lock" class="w-5 h-5"></i>
+                                </div>
+                                <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" class="w-full pl-12 pr-4 py-3.5 bg-background border border-border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all duration-300" />
+                            </div>
+                        </div>
+
+                        <button type="submit" id="loginSubmitBtn" class="w-full relative overflow-hidden group bg-gradient-to-r from-primary to-secondary text-white font-bold py-3.5 rounded-xl transition-all duration-300 hover:shadow-glow-primary hover:-translate-y-0.5">
+                            <span class="relative z-10 flex items-center justify-center gap-2">
+                                <span id="loginSubmitLabel" class="btn-label">Initialize Session</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4 btn-label group-hover:translate-x-1 transition-transform"></i>
+                                <span id="loginSpinner" class="btn-spinner hidden w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            </span>
+                            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                        </button>
+                        
+                        <p id="loginError" class="text-danger text-sm text-center h-5" role="alert"></p>
+
+                        <div class="relative flex items-center py-2">
+                            <div class="flex-grow border-t border-border"></div>
+                            <span class="flex-shrink-0 mx-4 text-gray-500 text-xs uppercase tracking-wider font-bold">Or</span>
+                            <div class="flex-grow border-t border-border"></div>
+                        </div>
+
+                        <button type="button" id="googleLoginBtn" class="w-full relative overflow-hidden group bg-white text-gray-900 font-bold py-3.5 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:-translate-y-0.5 border border-gray-200 flex items-center justify-center gap-3 hidden">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                <path fill="none" d="M1 1h22v22H1z"/>
+                            </svg>
+                            <span>Sign in with Google</span>
+                        </button>
+
+                        <div class="text-center pt-2">
+                            <button type="button" id="toggleRegBtn" class="text-sm font-semibold text-primary hover:text-secondary transition-colors">
+                                Don't have an account? Create one
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="loginNoAuth" class="hidden mt-8 pt-8 border-t border-border text-center">
+                        <p class="text-sm text-gray-400 mb-5">Open access mode. No authentication required.</p>
+                        <button type="button" id="loginSkipBtn" class="w-full bg-surfaceHighlight hover:bg-white/10 text-white font-semibold py-3.5 rounded-xl border border-border transition-all duration-300">
+                            Enter Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Shell -->
+    <div id="appShell" class="relative z-10 flex flex-col min-h-screen transition-all duration-700 opacity-0 hidden">
+
+      <!-- Instant Sell Confirm Modal -->
+      <div id="instantSellModal" class="fixed inset-0 z-[300] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="instantSellModalBg"></div>
+        <div class="relative z-10 w-full max-w-sm mx-4 bg-surface border border-warning/30 rounded-2xl shadow-[0_0_60px_rgba(245,158,11,0.15)] overflow-hidden">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-warning/10 to-transparent border-b border-warning/20 p-5 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-warning/10 border border-warning/30 flex items-center justify-center text-warning shrink-0">
+              <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+            </div>
+            <div>
+              <h3 class="text-white font-bold text-base">Confirm Instant Sell</h3>
+              <p class="text-warning/70 text-xs font-medium">This action cannot be undone</p>
+            </div>
+          </div>
+          <!-- Body -->
+          <div class="p-5 space-y-3">
+            <p class="text-gray-300 text-sm leading-relaxed">
+              You are about to <span class="text-white font-bold">immediately execute a sell trade</span>, bypassing the daily schedule.
+            </p>
+            <div class="bg-warning/5 border border-warning/20 rounded-xl p-3 flex items-start gap-2">
+              <i data-lucide="triangle-alert" class="w-4 h-4 text-warning shrink-0 mt-0.5"></i>
+              <p class="text-warning/80 text-xs">Make sure <strong>Dry Run is OFF</strong> if you want a real trade. This will use actual funds.</p>
+            </div>
+          </div>
+          <!-- Footer -->
+          <div class="p-4 border-t border-border flex gap-3">
+            <button id="instantSellCancelBtn" class="flex-1 py-2.5 px-4 rounded-xl border border-border text-gray-400 font-semibold text-sm hover:bg-white/5 transition-colors">
+              Cancel
+            </button>
+            <button id="instantSellConfirmBtn" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-warning/80 to-warning text-white font-bold text-sm hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all">
+              <span class="flex items-center justify-center gap-1.5">
+                <i data-lucide="zap" class="w-4 h-4 fill-current"></i> Sell Now
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Navigation -->
+
+      <nav class="sticky top-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border">
+        <div class="max-w-[1400px] mx-auto px-6 py-3 min-h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          
+          <!-- Brand -->
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-surfaceHighlight border border-border flex items-center justify-center p-2 shadow-glow-primary">
+                <img src="/logo.png" alt="NexusFlow" class="w-full h-full object-contain" />
+            </div>
+            <div>
+              <div class="text-[0.65rem] font-bold text-primary tracking-widest uppercase leading-none mb-1">Arbitrum Network</div>
+              <div class="text-lg font-bold text-white tracking-tight leading-none">NexusFlow</div>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="flex flex-wrap items-center p-1 bg-surfaceHighlight rounded-lg border border-border mt-2 sm:mt-0">
+            <button type="button" class="tab-btn active px-5 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 text-gray-400 hover:text-white" data-target="dashboardView">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+                </div>
+            </button>
+            <button type="button" class="tab-btn px-5 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 text-gray-400 hover:text-white" data-target="configView">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Configuration
+                </div>
+            </button>
+          </div>
+
+          <!-- Status & Actions -->
+          <div class="flex items-center gap-4">
+            
+            <div id="statusChip" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surfaceHighlight transition-colors duration-300" data-status="stopped">
+              <span id="statusDot" class="w-2 h-2 rounded-full bg-gray-500 transition-colors duration-300"></span>
+              <span id="statusText" class="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wide">Offline</span>
+            </div>
+
+            <div id="streamPill" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surfaceHighlight" data-live="0">
+              <span id="streamDot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+              <span id="streamLabel" class="text-xs font-semibold text-gray-400">Stream</span>
+            </div>
+
+            <div class="h-6 w-px bg-border hidden sm:block"></div>
+
+            <button type="button" id="logoutBtn" class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="Sign out">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+              <span class="hidden sm:inline font-medium">Exit</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 max-w-[1400px] w-full mx-auto p-6 space-y-6">
+        
+        <!-- Dashboard Tab -->
+        <div id="dashboardView" class="tab-view active space-y-6">
+          
+          <!-- Hero Section: Operations -->
+          <section class="glass-card rounded-2xl p-8 relative overflow-hidden group stagger-item" style="animation-delay: 0.1s;">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            
+            <div class="relative z-10 flex flex-col gap-8">
+                
+                <!-- Header -->
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                        <i data-lucide="cpu" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Execution Engine</h2>
+                        <p class="text-sm text-gray-400">Scheduler child process & routing core</p>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-background/50 border border-border rounded-xl p-4">
+                        <span class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Process ID</span>
+                        <span id="pidText" class="font-mono text-lg text-white font-medium">&mdash;</span>
+                    </div>
+                    <div class="bg-background/50 border border-border rounded-xl p-4">
+                        <span class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Uptime</span>
+                        <span id="startedText" class="font-mono text-lg text-white font-medium truncate block">&mdash;</span>
+                    </div>
+                    <div class="col-span-2 md:col-span-1 bg-background/50 border border-border rounded-xl p-4 border-l-2 border-l-primary/50 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-primary/5 animate-pulse-slow"></div>
+                        <span class="relative z-10 block text-xs font-bold text-primary uppercase tracking-widest mb-1">Next Scheduled Execution</span>
+                        <span id="nextSellText" class="relative z-10 font-mono text-lg text-white font-medium truncate block">&mdash;</span>
+                    </div>
+                </div>
+
+                <!-- Controls Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full border-t border-border pt-6">
+                    <button type="button" id="startBtn" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-success/80 to-success text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5">
+                        <i data-lucide="play" class="w-5 h-5 fill-current"></i> Start
+                    </button>
+                    <button type="button" id="stopBtn" disabled class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-danger/80 to-danger text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5">
+                        <i data-lucide="square" class="w-4 h-4 fill-current"></i> Stop
+                    </button>
+                    <button type="button" id="instantSellBtn" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-warning/80 to-warning text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5">
+                        <i data-lucide="zap" class="w-5 h-5 fill-current"></i> Instant Sell
+                    </button>
+                    <button type="button" id="testBtn" class="w-full flex items-center justify-center gap-2 bg-surfaceHighlight border border-border text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-300 hover:bg-white/10 hover:-translate-y-0.5">
+                        <i data-lucide="beaker" class="w-5 h-5"></i> Dry Run
+                    </button>
+                </div>
+            </div>
+          </section>
+
+          <!-- Middle Grid: Health & State -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Chain Health -->
+            <section class="glass-card rounded-2xl p-6 flex flex-col stagger-item" style="animation-delay: 0.2s;">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center text-success border border-success/20">
+                  <i data-lucide="activity" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-white leading-tight">Network Telemetry</h2>
+                  <p class="text-xs text-gray-400">Real-time Arbitrum RPC data</p>
+                </div>
+              </div>
+              
+              <div class="flex-1 flex flex-col justify-center space-y-1">
+                <div class="flex justify-between items-center py-2.5 border-b border-border/50">
+                    <span class="text-sm font-medium text-gray-400">Current Block</span>
+                    <span id="healthBlock" class="font-mono text-sm font-semibold text-white">&mdash;</span>
+                </div>
+                <div class="flex justify-between items-center py-2.5 border-b border-border/50">
+                    <span class="text-sm font-medium text-gray-400">Gas Price</span>
+                    <span id="healthGas" class="font-mono text-sm font-semibold text-white text-success">&mdash;</span>
+                </div>
+                <div class="flex justify-between items-center py-2.5 border-b border-border/50">
+                    <span class="text-sm font-medium text-gray-400">Native Balance (ETH)</span>
+                    <span id="healthEth" class="font-mono text-sm font-semibold text-white">&mdash;</span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <span class="text-sm font-medium text-gray-400">Token Balance</span>
+                    <span id="healthTok" class="font-mono text-sm font-semibold text-primary">&mdash;</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Bot State -->
+            <section class="glass-card rounded-2xl p-6 flex flex-col stagger-item" style="animation-delay: 0.3s;">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center text-warning border border-warning/20">
+                  <i data-lucide="database" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-white leading-tight">State Ledger</h2>
+                  <p class="text-xs text-gray-400">Persisted execution data</p>
+                </div>
+              </div>
+              
+              <div class="flex-1 flex flex-col justify-center space-y-1">
+                <div class="flex justify-between items-center py-2.5 border-b border-border/50">
+                    <span class="text-sm font-medium text-gray-400">Daily Volume (USDT)</span>
+                    <span id="stateToday" class="font-mono text-sm font-semibold text-white">&mdash;</span>
+                </div>
+                <div class="flex justify-between items-center py-2.5 border-b border-border/50">
+                    <span class="text-sm font-medium text-gray-400">Last Error Encountered</span>
+                    <span id="stateErr" class="text-sm font-medium text-danger truncate max-w-[180px]">&mdash;</span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <span class="text-sm font-medium text-gray-400">Last Transaction Hash</span>
+                    <span id="stateTx" class="font-mono text-sm font-semibold text-secondary hover:text-primary cursor-pointer transition-colors truncate max-w-[180px]" title="Tx Hash">&mdash;</span>
+                </div>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- Bottom Grid: History & Console -->
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            
+            <!-- History Table -->
+            <section class="glass-card rounded-2xl overflow-hidden flex flex-col h-[400px] stagger-item" style="animation-delay: 0.4s;">
+              <div class="p-5 border-b border-border/30 bg-surfaceHighlight/30 flex justify-between items-center shrink-0">
+                  <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                          <i data-lucide="list-ordered" class="w-4 h-4"></i>
+                      </div>
+                      <h2 class="text-lg font-bold text-white">Execution History</h2>
+                  </div>
+              </div>
+              
+              <div class="flex-1 overflow-auto relative custom-scrollbar" id="tableWrap">
+                <table class="w-full text-left border-collapse" id="historyTable">
+                  <thead class="sticky top-0 bg-surface/90 backdrop-blur-md z-10 text-[0.65rem] uppercase tracking-wider text-gray-500 font-bold border-b border-border">
+                    <tr>
+                      <th class="py-3 px-5 font-bold">Timestamp</th>
+                      <th class="py-3 px-5 font-bold">Type</th>
+                      <th class="py-3 px-5 font-bold">Yield (USDT)</th>
+                      <th class="py-3 px-5 font-bold">Tx Hash</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyBody" class="divide-y divide-border/50">
+                    <!-- JS fills this -->
+                  </tbody>
+                </table>
+
+                <div id="emptyHistory" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-surface/50 backdrop-blur-sm">
+                    <div class="w-16 h-16 rounded-full bg-surfaceHighlight flex items-center justify-center mb-4 border border-border">
+                        <i data-lucide="inbox" class="w-8 h-8 text-gray-500"></i>
+                    </div>
+                    <p class="text-white font-bold text-lg mb-1">Awaiting Telemetry</p>
+                    <p class="text-gray-400 text-sm max-w-[250px]">On-chain transactions will populate here upon execution.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Console Log -->
+            <section class="glass-card rounded-2xl overflow-hidden flex flex-col h-[400px] stagger-item" style="animation-delay: 0.5s;">
+              <div class="p-3 px-4 border-b border-border/30 bg-black/40 flex justify-between items-center shrink-0 flex-wrap gap-3">
+                  <div class="flex items-center">
+                      <div class="flex items-center mr-4">
+                        <span class="mac-dot mac-close"></span>
+                        <span class="mac-dot mac-min"></span>
+                        <span class="mac-dot mac-max"></span>
+                      </div>
+                      <h2 class="text-sm font-mono font-bold text-gray-400">root@nexusflow:~</h2>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-white transition-colors mr-2">
+                        <input type="checkbox" id="pauseScroll" class="hidden peer" />
+                        <div class="w-4 h-4 rounded border border-gray-500 flex items-center justify-center peer-checked:bg-primary peer-checked:border-primary transition-colors">
+                            <i data-lucide="check" class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                        </div>
+                        Pause
+                    </label>
+                    <button type="button" id="copyLogsBtn" class="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title="Copy Logs">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                    <button type="button" id="clearBtn" class="p-1.5 rounded-md hover:bg-danger/20 text-gray-400 hover:text-danger transition-colors" title="Clear Terminal">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+              </div>
+              
+              <div class="flex-1 bg-[#09090b] p-4 overflow-hidden relative">
+                  <pre id="logs" class="w-full h-full overflow-auto font-mono text-[0.75rem] leading-relaxed text-gray-400 whitespace-pre-wrap break-words custom-scrollbar focus:outline-none" tabindex="0" role="log" aria-live="polite"></pre>
+                  <div class="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-[#09090b] to-transparent pointer-events-none"></div>
+                  <div class="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-[#09090b] to-transparent pointer-events-none"></div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+        <!-- Configuration Tab -->
+        <div id="configView" class="tab-view space-y-6" style="display: none;">
+          <section class="glass-card rounded-2xl overflow-hidden stagger-item">
+            <div class="p-6 md:p-8 border-b border-border/30 bg-gradient-to-r from-surfaceHighlight/30 to-transparent flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <div class="w-10 h-10 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+                            <i data-lucide="sliders" class="w-5 h-5"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">System Parameters</h2>
+                    </div>
+                    <p class="text-sm text-gray-400 pl-13">Modify runtime variables. <span class="text-warning">Requires bot restart to apply.</span></p>
+                </div>
+                <button type="button" id="saveConfigBtn" class="bg-gradient-to-r from-primary to-secondary text-white font-bold py-2.5 px-8 rounded-xl transition-all duration-300 hover:shadow-glow-primary hover:-translate-y-0.5 self-start md:self-auto flex items-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Commit Changes
+                </button>
+            </div>
+
+            <div id="configBody" class="p-6 md:p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
+                    
+                    <!-- Left Column -->
+                    <div class="space-y-10">
+                        <!-- Wallet Section -->
+                        <div>
+                            <h3 class="text-sm font-bold text-primary uppercase tracking-widest border-b border-border/50 pb-3 mb-5 flex items-center gap-2">
+                                <i data-lucide="wallet" class="w-4 h-4"></i> Authentication
+                            </h3>
+                            <div class="space-y-5">
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5 flex justify-between">
+                                        Private Key <em id="pkHint" class="text-xs text-secondary not-italic font-semibold"></em>
+                                    </span>
+                                    <div class="relative flex items-center">
+                                        <input id="cfg_PRIVATE_KEY" type="password" autocomplete="off" spellcheck="false" class="w-full bg-background border border-border rounded-lg pl-3 pr-16 py-2.5 font-mono text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                                        <button type="button" id="toggleKeyBtn" class="absolute right-2 text-xs font-semibold bg-surfaceHighlight hover:bg-white/10 text-gray-300 px-2 py-1 rounded transition-colors">Show</button>
+                                    </div>
+                                </label>
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">RPC Endpoint URL</span>
+                                    <input id="cfg_RPC_URL" type="text" spellcheck="false" class="w-full bg-background border border-border rounded-lg px-3 py-2.5 font-mono text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder-gray-600" placeholder="https://arb1.arbitrum.io/rpc" />
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Contracts Section -->
+                        <div>
+                            <h3 class="text-sm font-bold text-primary uppercase tracking-widest border-b border-border/50 pb-3 mb-5 flex items-center gap-2">
+                                <i data-lucide="file-code" class="w-4 h-4"></i> Smart Contracts
+                            </h3>
+                            <div class="space-y-5">
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">Target Token Address</span>
+                                    <input id="cfg_TOKEN_ADDRESS" type="text" spellcheck="false" class="w-full bg-background border border-border rounded-lg px-3 py-2.5 font-mono text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                                </label>
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">USDT Contract Address</span>
+                                    <input id="cfg_USDT_ADDRESS" type="text" spellcheck="false" class="w-full bg-background border border-border rounded-lg px-3 py-2.5 font-mono text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-10">
+                        <!-- Trading Section -->
+                        <div>
+                            <h3 class="text-sm font-bold text-secondary uppercase tracking-widest border-b border-border/50 pb-3 mb-5 flex items-center gap-2">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i> Execution Parameters
+                            </h3>
+                            
+                            <div class="mb-6">
+                                <label class="flex items-center gap-3 cursor-pointer group w-fit">
+                                    <div class="relative">
+                                        <input type="checkbox" id="cfg_DRY_RUN" class="peer sr-only" />
+                                        <div class="w-10 h-5 bg-background border border-border rounded-full peer-checked:bg-primary/20 peer-checked:border-primary transition-colors"></div>
+                                        <div class="absolute left-1 top-1 w-3 h-3 bg-gray-400 rounded-full peer-checked:translate-x-5 peer-checked:bg-primary transition-transform duration-300 shadow-sm"></div>
+                                    </div>
+                                    <span class="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">Simulation Mode (Dry Run)</span>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1 ml-13">Execute logic without broadcasting transactions to the network.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">Slippage Tolerance (BPS)</span>
+                                    <div class="relative">
+                                        <input id="cfg_SLIPPAGE_BPS" type="number" class="w-full bg-background border border-border rounded-lg pl-3 pr-10 py-2.5 text-sm text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                        <span class="absolute right-3 top-2.5 text-xs text-gray-500 font-mono">BPS</span>
+                                    </div>
+                                </label>
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">Max Gas Price</span>
+                                    <div class="relative">
+                                        <input id="cfg_MAX_GAS_GWEI" type="number" step="0.1" placeholder="0 = auto" class="w-full bg-background border border-border rounded-lg pl-3 pr-10 py-2.5 text-sm text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                        <span class="absolute right-3 top-2.5 text-xs text-gray-500 font-mono">GWEI</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">Min Size per Sell</span>
+                                    <div class="relative">
+                                        <input id="cfg_MIN_USDT" type="number" step="0.0001" class="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-2.5 text-sm text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                        <span class="absolute left-3 top-2.5 text-sm text-gray-500">$</span>
+                                    </div>
+                                </label>
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">Max Size per Sell</span>
+                                    <div class="relative">
+                                        <input id="cfg_MAX_USDT" type="number" step="0.0001" class="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-2.5 text-sm text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                        <span class="absolute left-3 top-2.5 text-sm text-gray-500">$</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                                <label class="block">
+                                    <span class="block text-sm font-medium text-gray-300 mb-1.5">Daily Volume Limit</span>
+                                    <div class="relative">
+                                        <input id="cfg_MAX_DAILY_USDT" type="number" step="0.01" class="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-2.5 text-sm text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                        <span class="absolute left-3 top-2.5 text-sm text-gray-500">$</span>
+                                    </div>
+                                </label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="block">
+                                        <span class="block text-xs font-medium text-gray-400 mb-1.5">Start Hour</span>
+                                        <input id="cfg_WINDOW_START_HOUR" type="number" min="0" max="23" class="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-center text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                    </label>
+                                    <label class="block">
+                                        <span class="block text-xs font-medium text-gray-400 mb-1.5">End Hour</span>
+                                        <input id="cfg_WINDOW_END_HOUR" type="number" min="0" max="23" class="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-center text-white focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" />
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Security -->
+                        <div class="bg-surfaceHighlight/30 rounded-xl p-5 border border-border/50">
+                            <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <i data-lucide="shield" class="w-4 h-4"></i> Dashboard Access Control
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-4">Set credentials to restrict access to this web interface.</p>
+                            
+                            <div class="space-y-4">
+                                <label class="block">
+                                    <span class="block text-xs font-medium text-gray-400 mb-1 flex justify-between">
+                                        Username <em id="dashUserHint" class="text-[0.65rem] text-primary not-italic font-bold uppercase"></em>
+                                    </span>
+                                    <input id="cfg_DASHBOARD_USERNAME" type="text" autocomplete="off" class="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                                </label>
+                                <label class="block">
+                                    <span class="block text-xs font-medium text-gray-400 mb-1 flex justify-between">
+                                        Password <em id="dashPwHint" class="text-[0.65rem] text-primary not-italic font-bold uppercase"></em>
+                                    </span>
+                                    <input id="cfg_DASHBOARD_PASSWORD" type="password" autocomplete="new-password" class="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                                </label>
+                                <label class="block">
+                                    <span class="block text-xs font-medium text-gray-400 mb-1 flex justify-between">
+                                        Session Secret <em id="sessHint" class="text-[0.65rem] text-primary not-italic font-bold uppercase"></em>
+                                    </span>
+                                    <input id="cfg_SESSION_SECRET" type="password" autocomplete="new-password" class="w-full bg-background border border-border rounded-lg px-3 py-2 font-mono text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+          </section>
+        </div>
+
+      </main>
+      
+      <footer class="mt-auto py-6 text-center text-xs text-gray-600 relative z-10">
+          <p>NexusFlow &copy; 2026. Non-custodial autonomous execution architecture.</p>
+      </footer>
+    </div>
+
+    <!-- Toast Notifications Root -->
+    <div id="toastRoot" class="fixed bottom-6 right-6 z-[600] flex flex-col gap-3 pointer-events-none w-full max-w-sm" aria-live="polite"></div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

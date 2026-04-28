@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .mask-radial-gradient {
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  }
+}
+
+/* Custom Scrollbar for terminal and tables */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Base resets */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Toast Animations */
+.toast {
+  pointer-events: auto;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 15, 25, 0.95);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast.ok { border-left: 4px solid #10B981; }
+.toast.ok::before { content: "✓"; color: #10B981; font-weight: bold; }
+.toast.err { border-left: 4px solid #F43F5E; }
+.toast.err::before { content: "✕"; color: #F43F5E; font-weight: bold; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Terminal log colors */
+.log-system { color: #8B5CF6; font-weight: 500; }
+.log-bot { color: #A1A1AA; }
+.log-bot-err { color: #F43F5E; }
+.log-test { color: #06B6D4; }
+.log-test-err { color: #F59E0B; }
+.log-ui { color: #71717A; }
+
+/* Status blinker */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+[data-live="1"] #streamDot {
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  animation: blink 1.8s ease-in-out infinite;
+}
+[data-live="0"] #streamDot { background: #F43F5E; }
+[data-status="running"] #statusDot {
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  animation: blink 2s ease-in-out infinite;
+}
+[data-status="stopped"] #statusDot { background: #F43F5E; }
+[data-status="running"] #statusText { color: #10B981; }
+[data-status="stopped"] #statusText { color: #F43F5E; }
+
+/* Tab Active State Styling overrides */
+.tab-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
+/* Glassmorphism utility for older browsers */
+.glass-card {
+  background: rgba(10, 10, 15, 0.6);
+  backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.boot-overlay--gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.empty-state--hidden {
+  display: none !important;
+}
+
+/* Gradient Mesh Background Animation */
+.bg-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #030305;
+  overflow: hidden;
+}
+
+.mesh-blob {
+  position: absolute;
+  filter: blur(100px);
+  border-radius: 50%;
+  animation: meshFloat 20s infinite alternate ease-in-out;
+  opacity: 0.5;
+}
+
+.mesh-blob-1 {
+  background: radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(139,92,246,0) 70%);
+  width: 60vw;
+  height: 60vw;
+  top: -10vw;
+  left: -10vw;
+  animation-delay: 0s;
+}
+
+.mesh-blob-2 {
+  background: radial-gradient(circle, rgba(6,182,212,0.3) 0%, rgba(6,182,212,0) 70%);
+  width: 50vw;
+  height: 50vw;
+  bottom: -10vw;
+  right: -5vw;
+  animation-delay: -5s;
+}
+
+.mesh-blob-3 {
+  background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0) 70%);
+  width: 40vw;
+  height: 40vw;
+  top: 40%;
+  left: 30%;
+  animation-delay: -10s;
+}
+
+@keyframes meshFloat {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, 10%) scale(1.1); }
+  100% { transform: translate(-5%, -5%) scale(0.9); }
+}
+
+/* Staggered Animations */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mac-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.mac-close { background-color: #ff5f56; }
+.mac-min { background-color: #ffbd2e; }
+.mac-max { background-color: #27c93f; }

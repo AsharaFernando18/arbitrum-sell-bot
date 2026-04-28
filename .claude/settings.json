@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kill 78146)",
+      "Bash(npm start *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(pkill -f \"node dashboard.js\")",
+      "Bash(pkill -f \"node bot.js\")",
+      "Bash(curl -s http://localhost:3000/api/session)",
+      "Bash(node -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(lsof -ti:tcp -P -c:3000)",
+      "Bash(pkill -9 -f \"node dashboard.js\")"
+    ]
+  }
+}
